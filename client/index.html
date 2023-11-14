@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>esbuild-hmr</title>
+  </head>
+  <body>
+    <h1>👇 SHOULD KEEP INITIAL TIMESTAMP 👇</h1>
+    <p>Initial timestamp: <b id="initial_date">-</b></p>
+    <p>HMR timestamp: <b id="hmr_date">-</b></p>
+    <script type="application/javascript">
+      if (!window.__modules) {
+        class HotContext {
+          id = '';
+          locked = false;
+          acceptCallbacks = [];
+          disposeCallbacks = [];
+
+          constructor(id) {
+            this.id = id;
+          }
+
+          accept(callback) {
+            if (this.locked) return;
+            this.acceptCallbacks.push(callback);
+          }
+
+          dispose(callback) {
+            if (this.locked) return;
+            this.disposeCallbacks.push(callback);
+          }
+
+          lock() {
+            this.locked = true;
+          }
+        }
+
+        const __m = window.__m = {};
+        const __r = window.__r = {};
+
+        window.global = window;
+        window.__modules = {
+          import(moduleName) {
+            console.log('__modules.import', moduleName);
+            return (
+              __m[moduleName] ||
+              (() => {
+                throw new Error(`"${moduleName}" module not found`);
+              })()
+            );
+          },
+          export(moduleName, exports) {
+            console.log('__modules.exports', moduleName, exports);
+            return __m[moduleName] = exports;
+          },
+          hot: {
+            register(moduleId) {
+              console.log('__modules.hot.register', moduleId);
+              const existContext = __r[moduleId];
+              if (existContext) {
+                existContext.lock();
+                return existContext;
+              }
+              return __r[moduleId] = new HotContext(moduleId);
+            },
+          },
+        };
+
+        const hmrSocket = new WebSocket('ws://localhost:8080/hot');
+        hmrSocket.addEventListener('message', async (event) => {
+          const payload = JSON.parse(event.data);
+          switch (payload.type) {
+            /**
+             * {
+             *   type: "reload",
+             * }
+             */
+            case 'reload':
+              window.location.reload();
+              break;
+
+            /**
+             * {
+             *   type: "update",
+             *   id: "module_id",
+             *   body: "<transformed source>"
+             * }
+             */
+            case 'update':
+              const targetModule = __r[payload.id] || {};
+              const acceptCallbacks = targetModule.acceptCallbacks || [];
+              const disposeCallbacks = targetModule.disposeCallbacks || [];
+              disposeCallbacks.forEach((callback) => callback());
+
+              try {
+                eval(payload.body);
+                acceptCallbacks.forEach((callback) => {
+                  callback({ body: payload.body });
+                });
+              } catch (error) {
+                console.error('[HMR] Error', error);
+                alert('HMR failed');
+              }
+              break;
+          }
+        });
+      }
+
+      window.onload = () => {
+        document.getElementById('initial_date').innerHTML = new Date().toISOString();
+      };
+
+    </script>
+    <script src="/bundle.js"></script>
+  </body>
+</html>
