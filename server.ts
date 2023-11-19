@@ -98,7 +98,7 @@ const transformCode = async (path: string, runtimeModule = false) => {
       externalHelpers: !runtimeModule,
       experimental: {
         plugins: [
-          ['swc-plugin-react-native-esbuild-module', {
+          ['swc-plugin-global-esm', {
             runtimeModule,
           }],
         ],
@@ -109,7 +109,7 @@ const transformCode = async (path: string, runtimeModule = false) => {
   const contextVariableName = `__hmr${sharedState._idx++}`;
 
   return `
-  var ${contextVariableName} = window.__modules.hot.register(${JSON.stringify(filename)});
+  var ${contextVariableName} = window.__hot.register(${JSON.stringify(filename)});
 
   ${result.code}
   
@@ -171,6 +171,7 @@ const transformCode = async (path: string, runtimeModule = false) => {
     write: false,
     metafile: true,
     sourceRoot: ROOT,
+    inject: ['swc-plugin-global-esm/runtime'],
     plugins: [
       {
         name: 'hmr-transformer',

@@ -884,10 +884,10 @@ statuses@2.0.1:
   resolved "https://registry.yarnpkg.com/statuses/-/statuses-2.0.1.tgz#55cb000ccf1d48728bd23c685a063998cf1a1b63"
   integrity sha512-RwNA9Z/7PrK06rYLIzFMlaF+l73iwpzsqRIFgbMLbTcLD6cOao82TaWefPXQvB2fOC4AjuYSEndS7N/mTCbkdQ==
 
-swc-plugin-react-native-esbuild-module@^0.1.0-alpha.2:
-  version "0.1.0-alpha.2"
-  resolved "https://registry.yarnpkg.com/swc-plugin-react-native-esbuild-module/-/swc-plugin-react-native-esbuild-module-0.1.0-alpha.2.tgz#7dfc88a859b8bb37a3cf1c99cf835a7ebbc148e6"
-  integrity sha512-BFS/S+pz7MoMVfdiO7yf/R1CMtj934PBi1dIQrHXMuw0FR2OpKdayTf+CfoWqHjUbXIoQ45hdFu27eLHfuwBfA==
+swc-plugin-global-esm@^0.1.0-alpha.0:
+  version "0.1.0-alpha.0"
+  resolved "https://registry.yarnpkg.com/swc-plugin-global-esm/-/swc-plugin-global-esm-0.1.0-alpha.0.tgz#3745140dd8883fe9e999f37a489826f0fecdbd3e"
+  integrity sha512-HdBTN2eq8ylfulzZ4iqHfDm2vhvdmJ6fdbA8bFVH3vOTRqnSOWZJuKOml7YMtUqgiFyCMbTkqbethTF+P+aKHA==
 
 to-regex-range@^5.0.1:
   version "5.0.1"

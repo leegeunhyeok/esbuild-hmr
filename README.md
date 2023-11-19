@@ -1,9 +1,12 @@
 # esbuild-hmr
 
+PoC of Hot Module Replacement(HMR) on [esbuild](https://esbuild.github.io).  
+(For [@react-native-esbuild](https://github.com/leegeunhyeok/react-native-esbuild))
+
 - Custom Fils System Watcher
 - Transform code to follow custom module system
   - Transform import & export statements
-  - [swc-plugin-react-native-esbuild-module](https://github.com/leegeunhyeok/swc-plugin-react-native-esbuild-module)
+  - [swc-plugin-global-esm](https://github.com/leegeunhyeok/swc-plugin-global-esm)
 
 
 ## Preview
