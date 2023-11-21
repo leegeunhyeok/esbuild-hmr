@@ -10,7 +10,13 @@ import * as chokidar from 'chokidar';
 import { transform } from '@swc/core';
 
 const ROOT = path.resolve('.');
-const sharedState = {
+const sharedState: {
+  _idx: number;
+  context: esbuild.BuildContext | null;
+  bundle: Uint8Array | null;
+  metafile: esbuild.Metafile | null;
+  clients: WebSocket[];
+} = {
   _idx: 0, // for unique variable name
   context: null,
   bundle: null,
