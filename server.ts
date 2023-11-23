@@ -92,7 +92,11 @@ const stripRoot = (path: string) => {
   return path.replace(ROOT, '').substring(1);
 };
 
-const transformCode = async (path: string, runtimeModule = false) => {
+const transformCode = async (
+  path: string,
+  runtimeModule = false,
+  importPaths: Record<string, string> = {},
+) => {
   const filename = stripRoot(path);
   const result = await transform(await fs.readFile(path, 'utf-8'), {
     filename,
@@ -106,6 +110,7 @@ const transformCode = async (path: string, runtimeModule = false) => {
         plugins: [
           ['swc-plugin-global-esm', {
             runtimeModule,
+            importPaths,
           }],
         ],
       },
@@ -143,21 +148,25 @@ const transformCode = async (path: string, runtimeModule = false) => {
         });
       };
 
-      const getModuleAliases = () => {
+      const getModule = () => {
         const currentFile = sharedState.metafile.inputs[strippedPath];
         if (!currentFile) {
           console.warn(`unable to get meta data of ${path}`);
-          return [];
+          return null;
         }
-        return currentFile.imports;
+        return currentFile;
       };
 
-      transformCode(path, true).then((code) => {
+      const getImportPaths = () => {
+        return getModule()?.imports?.reduce((prev, curr) => ({
+          ...prev, [curr.original]: curr.path,
+        }), {}) ?? {};
+      };
+
+      transformCode(path, true, getImportPaths()).then((code) => {
         sendToClients(JSON.stringify({
           type: 'update',
-          body: getModuleAliases().reduce((prev, curr) => {
-            return prev.replace(curr.original, curr.path);
-          }, code),
+          body: code,
           id: strippedPath,
         }));
       }).catch((error) => {
