@@ -179,7 +179,7 @@ const transformCode = async (
   });
 
   const context = await esbuild.context({
-    entryPoints: ['./client/main.ts'],
+    entryPoints: ['./client/index.ts'],
     bundle: true,
     format: 'esm',
     target: 'es6',
