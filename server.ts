@@ -135,21 +135,24 @@ const transformCode = async (
 };
 
 (async function() {
-  await setupWatcher((event, path, _stats) => {
-    if (event !== 'change' || !path.endsWith('.ts')) return;
-    console.log(`file changed: ${event}`, { path });
+  const entryFile = path.resolve('./client/index.ts');
+  const strippedEntryFile = stripRoot(entryFile);
+
+  await setupWatcher((event, changedFilePath, _stats) => {
+    if (event !== 'change' || !changedFilePath.endsWith('.ts')) return;
+    console.log(`file changed: ${event}`, { path: changedFilePath });
     if (sharedState.clients.length) {
       console.log('[HMR] Send update message to client');
 
-      const strippedPath = stripRoot(path);
+      const strippedPath = stripRoot(changedFilePath);
       const sendToClients = (message: string) => {
         sharedState.clients.forEach((socket) => {
           socket.send(message);
         });
       };
 
-      const getModule = () => {
-        const currentFile = sharedState.metafile.inputs[strippedPath];
+      const getModule = (modulePath: string) => {
+        const currentFile = sharedState.metafile.inputs[modulePath];
         if (!currentFile) {
           console.warn(`unable to get meta data of ${path}`);
           return null;
@@ -157,19 +160,45 @@ const transformCode = async (
         return currentFile;
       };
 
-      const getImportPaths = () => {
-        return getModule()?.imports?.reduce((prev, curr) => ({
+      const getImportPaths = (modulePath: string) => {
+        return getModule(modulePath)?.imports?.reduce((prev, curr) => ({
           ...prev, [curr.original]: curr.path,
         }), {}) ?? {};
       };
 
-      transformCode(path, true, getImportPaths()).then((code) => {
-        sendToClients(JSON.stringify({
-          type: 'update',
-          body: code,
-          id: strippedPath,
-        }));
-      }).catch((error) => {
+      const getReverseDependencies = (targetModule: string, dependencies: string[] = [], visited: Set<string> = new Set()) => {
+        if (visited.has(targetModule) || targetModule === strippedEntryFile) {
+          return dependencies;
+        }
+        visited.add(targetModule);
+
+        Object.entries(sharedState.metafile.inputs).forEach(([modulePath, moduleInfo]) => {
+          const isParent = moduleInfo.imports.some(({ path }) => path === targetModule);
+          if (isParent) {
+            dependencies.push(modulePath);
+            dependencies = getReverseDependencies(modulePath, dependencies, visited);
+          }
+        });
+
+        return dependencies;
+      };
+
+      const reverseDependencies = [
+        strippedPath,
+        ...getReverseDependencies(strippedPath),
+      ];
+
+      console.log('reverse dependencies', JSON.stringify(reverseDependencies, null, 2));
+
+      reverseDependencies.reduce((prev, modulePath) => prev.then(() => {
+        return transformCode(path.join(ROOT, modulePath), true, getImportPaths(modulePath)).then((code) => {
+          sendToClients(JSON.stringify({
+            type: 'update',
+            body: code,
+            id: strippedPath,
+          }));
+        });
+      }), Promise.resolve()).catch((error) => {
         console.error('[HMR] Transform error', error);
         sharedState.context.rebuild().then(() => {
           sendToClients(JSON.stringify({ type: 'reload' }));
@@ -179,7 +208,7 @@ const transformCode = async (
   });
 
   const context = await esbuild.context({
-    entryPoints: ['./client/index.ts'],
+    entryPoints: [entryFile],
     bundle: true,
     format: 'esm',
     target: 'es6',
