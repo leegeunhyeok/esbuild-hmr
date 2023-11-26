@@ -134,8 +134,7 @@ const transformCode = async (
   });
 
   const contextVariableName = `__hmr${sharedState._idx++}`;
-
-  return `
+  const code = `
   var ${contextVariableName} = window.__hot.register(${JSON.stringify(filename)});
 
   ${result.code}
@@ -148,6 +147,13 @@ const transformCode = async (
     console.log('disposed!', ${JSON.stringify(filename)});
   });
   `;
+
+  return runtimeModule ? `try {
+    ${code}
+  } catch(error) {
+    alert('HMR Failed');
+    window.location.reload();
+  }` : code;
 };
 
 (async function() {

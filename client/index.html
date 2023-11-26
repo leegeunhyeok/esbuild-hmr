@@ -76,16 +76,10 @@
               const acceptCallbacks = targetModule.acceptCallbacks || [];
               const disposeCallbacks = targetModule.disposeCallbacks || [];
               disposeCallbacks.forEach((callback) => callback());
-
-              try {
-                eval(payload.body);
-                acceptCallbacks.forEach((callback) => {
-                  callback({ body: payload.body });
-                });
-              } catch (error) {
-                console.error('[HMR] Error', error);
-                alert('HMR failed');
-              }
+              eval(payload.body);
+              acceptCallbacks.forEach((callback) => {
+                callback({ body: payload.body });
+              });
               break;
           }
         });
