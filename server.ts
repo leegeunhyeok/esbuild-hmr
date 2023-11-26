@@ -9,18 +9,34 @@ import * as esbuild from 'esbuild';
 import * as chokidar from 'chokidar';
 import { transform } from '@swc/core';
 
+type ModuleMeta = esbuild.Metafile & {
+  inputs: esbuild.Metafile['inputs'] & {
+    [path: string]: {
+      bytes: number;
+      parents?: Set<string>;
+      imports: {
+        path: string;
+        kind: esbuild.ImportKind;
+        external?: boolean;
+        original?: string;
+      }[]
+      format?: 'cjs' | 'esm'
+    }
+  }
+}
+
 const ROOT = path.resolve('.');
 const sharedState: {
   _idx: number;
   context: esbuild.BuildContext | null;
   bundle: Uint8Array | null;
-  metafile: esbuild.Metafile | null;
+  moduleMeta: ModuleMeta | null;
   clients: WebSocket[];
 } = {
   _idx: 0, // for unique variable name
   context: null,
   bundle: null,
-  metafile: null,
+  moduleMeta: null,
   clients: [],
 };
 
@@ -152,7 +168,7 @@ const transformCode = async (
       };
 
       const getModule = (modulePath: string) => {
-        const currentFile = sharedState.metafile.inputs[modulePath];
+        const currentFile = sharedState.moduleMeta.inputs[modulePath];
         if (!currentFile) {
           console.warn(`unable to get meta data of ${path}`);
           return null;
@@ -166,22 +182,14 @@ const transformCode = async (
         }), {}) ?? {};
       };
 
-      const getReverseDependencies = (targetModule: string, dependencies: string[] = [], visited: Set<string> = new Set()) => {
-        if (visited.has(targetModule) || targetModule === strippedEntryFile) {
-          return dependencies;
+      const getReverseDependencies = (targetModule: string, dependencies: string[] = []) => {
+        if (sharedState.moduleMeta.inputs[targetModule]?.parents) {
+          sharedState.moduleMeta.inputs[targetModule].parents.forEach((parentModule) => {
+            dependencies = getReverseDependencies(parentModule, [...dependencies, parentModule]);
+          });
         }
-        visited.add(targetModule);
-
-        Object.entries(sharedState.metafile.inputs).forEach(([modulePath, moduleInfo]) => {
-          const isParent = moduleInfo.imports.some(({ path }) => path === targetModule);
-          if (isParent) {
-            dependencies.push(modulePath);
-            dependencies = getReverseDependencies(modulePath, dependencies, visited);
-          }
-        });
-
         return dependencies;
-      };
+      }
 
       const reverseDependencies = [
         strippedPath,
@@ -230,8 +238,33 @@ const transformCode = async (
           });
           build.onEnd((result) => {
             console.log('esbuild.onEnd');
+
+            const metafile = result.metafile as ModuleMeta;
+            Object.entries(metafile.inputs).forEach(([filename, moduleInfo]) => {
+              moduleInfo.imports.forEach(({ path }) => {
+                if (!metafile.inputs[path]) {
+                  console.warn(`${path} is not exist in metafile`);
+                  return;
+                }
+
+                if (!metafile.inputs[path].parents) {
+                  metafile.inputs[path].parents = new Set();
+                }
+
+                metafile.inputs[path].parents.add(filename);
+                console.log(`parent ${filename}, child: ${path}`);
+              });
+            });
+
+            console.log(JSON.stringify(metafile, (_key, value) => {
+              if (value instanceof Set) {
+                return Array.from(value);
+              }
+              return value;
+            }, 2));
+
             sharedState.bundle = result.outputFiles[0].contents;
-            sharedState.metafile = result.metafile;
+            sharedState.moduleMeta = metafile;
           });
         },
       },
