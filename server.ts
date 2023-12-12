@@ -124,7 +124,7 @@ const transformCode = async (
       externalHelpers: !runtimeModule,
       experimental: {
         plugins: [
-          ['swc-plugin-global-esm', {
+          ['swc-plugin-global-module', {
             runtimeModule,
             importPaths,
           }],
@@ -229,7 +229,7 @@ const transformCode = async (
     write: false,
     metafile: true,
     sourceRoot: ROOT,
-    inject: ['swc-plugin-global-esm/runtime'],
+    inject: ['swc-plugin-global-module/runtime'],
     plugins: [
       {
         name: 'hmr-transformer',

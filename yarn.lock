@@ -884,10 +884,10 @@ statuses@2.0.1:
   resolved "https://registry.yarnpkg.com/statuses/-/statuses-2.0.1.tgz#55cb000ccf1d48728bd23c685a063998cf1a1b63"
   integrity sha512-RwNA9Z/7PrK06rYLIzFMlaF+l73iwpzsqRIFgbMLbTcLD6cOao82TaWefPXQvB2fOC4AjuYSEndS7N/mTCbkdQ==
 
-swc-plugin-global-esm@^0.1.0-alpha.2:
+swc-plugin-global-module@^0.1.0-alpha.2:
   version "0.1.0-alpha.2"
-  resolved "https://registry.yarnpkg.com/swc-plugin-global-esm/-/swc-plugin-global-esm-0.1.0-alpha.2.tgz#6daf678edd89bc06f079a2d0fb3f9114a9e766ac"
-  integrity sha512-E0OloW/l5VI2K2LWrAv+g2atTL9n1NFNhFMWxn0cJEcmefSgHjIZ6V+9fGeJ2Z8vJJH0VLotglS9b5Lb20xFfQ==
+  resolved "https://registry.yarnpkg.com/swc-plugin-global-module/-/swc-plugin-global-module-0.1.0-alpha.2.tgz#377c2689c45ebf9bfdd462b039fc04ae54d9aafb"
+  integrity sha512-JDAai1vkCP2AtT8jhcr0wVYf137PQk9F9bTxHG0rvTp4Kb/IkWVcGicT6wZ3Zpb+68fRti0SMpp7ETzoBKhSMg==
 
 to-regex-range@^5.0.1:
   version "5.0.1"
